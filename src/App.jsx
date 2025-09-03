@@ -12,8 +12,8 @@ import Login from "./Components/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import { Toaster } from "react-hot-toast";
 import Profile from "./Components/Profile";
-import Orders from "./Components/orders";
 import toast from "react-hot-toast";
+import Orders from "./Components/orders";
 const App = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
