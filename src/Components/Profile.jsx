@@ -10,7 +10,7 @@ import { IoMdClose } from "react-icons/io";
 
 const Profile = ({ handelLogout }) => {
   const [loggedInUser, setLoggedInUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || {}
+    JSON.parse(localStorage.getItem("loggedInUser")) || {}
   );
   const [isEditable, setIsEditable] = useState({
     personalIformation: false,
@@ -75,7 +75,7 @@ const Profile = ({ handelLogout }) => {
     }
 
     setErrors(newErrors);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
     setLoggedInUser(updatedUser);
   };
 

@@ -61,12 +61,11 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const handelLogout = (func) => {
     if (typeof func === "function") {
       func((prev) => !prev);
     }
-    console.log(user);
     if (user) {
       localStorage.clear();
       setwishlistData([]);

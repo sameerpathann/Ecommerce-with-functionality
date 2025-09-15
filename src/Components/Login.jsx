@@ -3,6 +3,7 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import loginSvg from "../assets/Login-pana.svg";
+import axios from "axios";
 
 const Login = () => {
   const [isShowPassword, setIsShowPassword] = useState(false);
@@ -18,9 +19,34 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  const loginUser = async () => {
+    const response = await axios.post(
+      "http://192.168.29.2:7210/api/v1/user/login",
+      formData
+    );
+
+    if (response.data.status) {
+      if (!localStorage.getItem("loggedInUser")) {
+        localStorage.setItem(
+          "loggedInUser",
+          JSON.stringify({
+            name: response.data.data.profile.name,
+            email: response.data.data.profile.email,
+          })
+        );
+      }
+      setformData({ email: "", password: "" });
+      toast.success("Login Successful 🎉");
+      setTimeout(() => {
+        navigate("/");
+      }, 800);
+    } else {
+      toast.error("Invalid email or password");
+    }
+  };
+
   const handelSubmit = (e) => {
     e.preventDefault();
-    const userData = JSON.parse(localStorage.getItem("user")) || null;
     let newErrors = {};
 
     if (!formData.email.trim()) {
@@ -29,26 +55,14 @@ const Login = () => {
       !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)
     ) {
       newErrors.email = "Enter a valid email";
-    } else if (
-      !userData ||
-      formData.email.toLocaleLowerCase() !== userData.email.toLocaleLowerCase()
-    ) {
-      newErrors.email = "Invalid Email";
     }
-
     if (!formData.password.trim()) {
       newErrors.password = "Password is required";
-    } else if (!userData || formData.password !== userData.password) {
-      newErrors.password = "Wrong password";
     }
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      toast.success("Login Successful 🎉");
-      setTimeout(() => {
-        navigate("/");
-      }, 800);
+      loginUser();
     }
   };
 

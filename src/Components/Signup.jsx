@@ -3,6 +3,7 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import signupSvg from "../assets/Sign up-pana.svg";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const Signup = () => {
   const [isShowPassword, setIsShowPassword] = useState(false);
@@ -19,6 +20,23 @@ const Signup = () => {
   });
 
   const navigate = useNavigate();
+  const ragisterUser = async () => {
+    const response = await axios.post(
+      "http://192.168.29.2:7210/api/v1/user/create",
+      formData
+    );
+    if (response.data.status) {
+      localStorage.setItem(
+        "loggedInUser",
+        JSON.stringify({ name: formData.name, email: formData.email })
+      );
+      setformData({ name: "", email: "", password: "" });
+      toast.success(`Register Successfully`);
+      setTimeout(() => {
+        navigate("/login");
+      }, 800);
+    }
+  };
 
   const handelSubmit = (e) => {
     e.preventDefault();
@@ -53,16 +71,7 @@ const Signup = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      localStorage.setItem("user", JSON.stringify(formData));
-      setformData({
-        name: "",
-        email: "",
-        password: "",
-      });
-      toast.success("Signup Successful 🎉");
-      setTimeout(() => {
-        navigate("/login");
-      }, 800);
+      ragisterUser();
     }
   };
 

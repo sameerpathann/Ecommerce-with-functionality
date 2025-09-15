@@ -17,7 +17,7 @@ const Cards = ({
     localStorage.setItem("cart", JSON.stringify(newCart));
   };
 
-  const isLoggedIn = !!localStorage.getItem("user");
+  const isLoggedIn = !!localStorage.getItem("loggedInUser");
 
   const existingItem = cartItems.find((item) => item.id === product.id);
   const count = existingItem ? existingItem.qty : 0;

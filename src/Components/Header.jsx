@@ -5,14 +5,7 @@ import { RiShoppingCart2Line } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { RiLoginBoxLine } from "react-icons/ri";
-const Header = ({
-  search,
-  setSearch,
-  cartCount,
-  wishlistCount,
-
-  user,
-}) => {
+const Header = ({ search, setSearch, cartCount, wishlistCount, user }) => {
   const [isTimOpen, setisTimOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -93,7 +86,7 @@ const Header = ({
           </div>
         </div>
         <div
-          className={`w-[35%] h-[120%] top-[60px] right-[70px] sm:w-[25%] sm:right-[50px] sm:top-[65px] md:right-[150px] lg:w-[20%] lg:right-[170px] absolute  z-1 bg-white shadow-[0px_0px_7px_6px_rgba(0,_0,_0,_0.1)] rounded-md overflow-auto ${
+          className={`w-[35%] h-[120%] top-[60px] right-[70px] sm:w-[15%] sm:right-[80px] sm:top-[65px] md:right-[190px] lg:w-[13%] lg:right-[220px] absolute  z-1 bg-white shadow-[0px_0px_7px_6px_rgba(0,_0,_0,_0.1)] rounded-md overflow-auto ${
             isTimOpen ? `block` : `hidden`
           }`}
         >
@@ -127,12 +120,3 @@ const Header = ({
 };
 
 export default Header;
-{
-  /* <div
-  className={`w-[30%] h-[20vh] absolute bottom-[-70%] right-[20%] sm:w-[15%] sm:bottom-[-70%] sm:right-[15%] md:w-[19%] md:[-43%] md:right-[24%] lg:w-[15%] lg:right-[15%] z-10 ${
-    isTimOpen ? `block` : `hidden`
-  }`}
->
-
-</div>; */
-}
