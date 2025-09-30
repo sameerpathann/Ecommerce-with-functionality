@@ -24,17 +24,14 @@ const Login = () => {
       "http://192.168.29.2:7210/api/v1/user/login",
       formData
     );
-
     if (response.data.status) {
       if (!localStorage.getItem("loggedInUser")) {
         localStorage.setItem(
           "loggedInUser",
-          JSON.stringify({
-            name: response.data.data.profile.name,
-            email: response.data.data.profile.email,
-          })
+          JSON.stringify(response.data.data.profile)
         );
       }
+      localStorage.setItem("token", response.data.data.token);
       setformData({ email: "", password: "" });
       toast.success("Login Successful 🎉");
       setTimeout(() => {
@@ -68,7 +65,7 @@ const Login = () => {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#f0b00095] to-[#e36429ac] px-4">
+      <div className="min-h-screen flex items-center justify-center py-6 bg-gradient-to-r from-[#f0b00095] to-[#e36429ac] px-4">
         <div className="w-full sm:w-[80%] md:w-[70%] lg:w-[60%] flex flex-col md:flex-row items-center bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl shadow-xl p-6">
           <div className="hidden md:flex w-1/2 items-center justify-center">
             <img src={loginSvg} alt="login" className="w-[80%]" />

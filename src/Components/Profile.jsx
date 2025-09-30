@@ -9,19 +9,25 @@ import { useNavigate } from "react-router-dom";
 import { IoMdClose } from "react-icons/io";
 
 const Profile = ({ handelLogout }) => {
-  const [loggedInUser, setLoggedInUser] = useState(
-    JSON.parse(localStorage.getItem("loggedInUser")) || {}
-  );
+  const [loggedInUser, setLoggedInUser] = useState({
+    name: "sameer pathan",
+    gender: "male",
+    email: "sameerpathan1582004@gmail.com",
+    phone: "2133927332",
+    address: "221,asdasd asdasd,agada cadad",
+    city: "indore",
+    state: "madhyapradesh",
+    postCode: "452001",
+    countryCode: "+91",
+    accountStatus: "active",
+    image: "",
+  });
   const [isEditable, setIsEditable] = useState({
     personalIformation: false,
     email: false,
     phone: false,
   });
-  const [Errors, setErrors] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [Errors, setErrors] = useState({ name: "", email: "", phone: "" });
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const nameRef = useRef();
@@ -35,22 +41,16 @@ const Profile = ({ handelLogout }) => {
     let newErrors = { name: "", email: "", phone: "" };
 
     if (type === "personalDetails") {
-      if (
-        !nameRef.current.value.trim() ||
-        nameRef.current.value == "Not Available"
-      ) {
-        newErrors.name = "First name is required";
+      if (!nameRef.current.value.trim()) {
+        newErrors.name = "Name is required";
         setErrors(newErrors);
         return;
       }
-
       updatedUser.name = nameRef.current.value.trim();
-      updatedUser.lastName = lastNameRef.current.value.trim();
       let selectedGender = document.querySelector(
         'input[name="gender"]:checked'
       )?.value;
       if (selectedGender) updatedUser.gender = selectedGender;
-
       setIsEditable((prev) => ({ ...prev, personalIformation: false }));
     }
 
@@ -66,16 +66,15 @@ const Profile = ({ handelLogout }) => {
 
     if (type === "phone") {
       if (!mobileRef.current.value.trim()) {
-        newErrors.phone = "Phone number is required";
+        newErrors.phone = "Phone is required";
         setErrors(newErrors);
         return;
       }
-      updatedUser.mobile = mobileRef.current.value.trim();
+      updatedUser.phone = mobileRef.current.value.trim();
       setIsEditable((prev) => ({ ...prev, phone: false }));
     }
 
     setErrors(newErrors);
-    localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
     setLoggedInUser(updatedUser);
   };
 
@@ -103,15 +102,17 @@ const Profile = ({ handelLogout }) => {
           <div className="w-[27%] h-full flex items-center justify-center">
             <img
               className="h-full cursor-pointer w-[60%]"
-              src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/profile-pic-male_4811a1.svg"
+              src={
+                loggedInUser.image ||
+                "https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/profile-pic-male_4811a1.svg"
+              }
               alt=""
             />
           </div>
           <div className="w-[73%] h-full flex justify-center gap-1 flex-col">
             <span className="text-xs font-semibold text-gray-500">Hello,</span>
             <h1 className="font-semibold text-base capitalize">
-              {loggedInUser?.name + " " + (loggedInUser?.lastName || "") ||
-                "Guest"}
+              {loggedInUser?.name || "Guest"}
             </h1>
           </div>
         </div>
@@ -119,7 +120,7 @@ const Profile = ({ handelLogout }) => {
         <div className="w-full h-full flex flex-col shadow-md bg-white rounded-xs gap-2">
           <div
             onClick={() => navigate("/profile/order")}
-            className="md:h-[15%] sm:py-6 sm:px-6 py-4 lg:px-8 px-4  border-b border-gray-200 flex items-center justify-between"
+            className="md:h-[15%] sm:py-6 sm:px-6 py-4 lg:px-8 px-4 border-b border-gray-200 flex items-center justify-between"
           >
             <div className="flex items-center gap-5">
               <FaBoxes className="text-yellow-500 text-xl" />
@@ -158,7 +159,7 @@ const Profile = ({ handelLogout }) => {
           </div>
           <div
             onClick={handelLogout}
-            className="flex md:h-[15%] sm:py-6 sm:px-6 py-4 lg:px-8 px-4  items-center justify-between border-b border-gray-200"
+            className="flex md:h-[15%] sm:py-6 sm:px-6 py-4 lg:px-8 px-4 items-center justify-between border-b border-gray-200"
           >
             <div className="flex items-center gap-5">
               <FaPowerOff className="text-yellow-500 text-xl" />
@@ -192,75 +193,46 @@ const Profile = ({ handelLogout }) => {
           <div className="flex flex-wrap items-center gap-4 mt-4">
             <input
               ref={nameRef}
-              defaultValue={loggedInUser?.name?.trim() || "Not available"}
+              defaultValue={loggedInUser?.name || ""}
               disabled={!isEditable.personalIformation}
-              className={`px-3 rounded-xs ${
-                !isEditable && `bg-gray-100`
-              } outline-none ${
-                !isEditable.personalIformation && `text-gray-500`
-              } py-3.5 ring ring-gray-300 focus:ring-yellow-500  flex-1 min-w-[45%] capitalize text-sm ${
+              className={`px-3 rounded-xs outline-none py-3.5 ring ring-gray-300 focus:ring-yellow-500 w-[60%] capitalize text-sm ${
                 isEditable.personalIformation
-                  ? `cursor-pointer`
-                  : `cursor-not-allowed`
-              }`}
-              type="text"
-            />
-            <input
-              ref={lastNameRef}
-              defaultValue={loggedInUser?.lastName || "Not available"}
-              disabled={!isEditable.personalIformation}
-              className={`px-3 rounded-xs ${
-                !isEditable && `bg-gray-100`
-              } outline-none ${
-                !isEditable.personalIformation && `text-gray-500`
-              } py-3.5 ring ring-gray-300 focus:ring-yellow-500 flex-1 min-w-[45%] capitalize text-sm ${
-                isEditable.personalIformation
-                  ? `cursor-pointer`
-                  : `cursor-not-allowed`
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed text-gray-500"
               }`}
               type="text"
             />
           </div>
-          {Errors.name && (
-            <h6 className="text-xs mt-2 text-red-500 font-semibold">
-              {Errors.name}
-            </h6>
-          )}
-        </div>
-
-        <div>
-          <h6 className="text-sm">Your Gender</h6>
           <div className="flex gap-6 mt-2 flex-wrap">
             <label
-              className={`flex gap-2 items-center text-base md:text-base ${
+              className={`flex gap-2 items-center text-base ${
                 isEditable.personalIformation
-                  ? `text-gray-600 cursor-pointer`
-                  : `text-gray-300 cursor-not-allowed`
+                  ? "text-gray-600 cursor-pointer"
+                  : "text-gray-300 cursor-not-allowed"
               }`}
             >
               <input
-                ref={genderRef}
                 type="radio"
                 name="gender"
-                value="Male"
-                defaultChecked={loggedInUser?.gender === "Male"}
+                value="male"
+                defaultChecked={loggedInUser?.gender === "male"}
                 disabled={!isEditable.personalIformation}
                 className="w-4 h-4"
               />
               Male
             </label>
             <label
-              className={`flex gap-2 items-center text-base md:text-base ${
+              className={`flex gap-2 items-center text-base ${
                 isEditable.personalIformation
-                  ? "cursor-pointer text-gray-600"
-                  : "cursor-not-allowed text-gray-300"
+                  ? "text-gray-600 cursor-pointer"
+                  : "text-gray-300 cursor-not-allowed"
               }`}
             >
               <input
                 type="radio"
                 name="gender"
-                value="Female"
-                defaultChecked={loggedInUser?.gender === "Female"}
+                value="female"
+                defaultChecked={loggedInUser?.gender === "female"}
                 disabled={!isEditable.personalIformation}
                 className="w-4 h-4"
               />
@@ -289,31 +261,24 @@ const Profile = ({ handelLogout }) => {
               {isEditable.email ? "Cancel" : "Edit"}
             </h6>
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-4">
-            <input
-              ref={emailRef}
-              defaultValue={loggedInUser?.email || ""}
-              disabled={!isEditable.email}
-              className={`rounded-md outline-none text-sm px-3 py-3.5 ${
-                !isEditable.email && `text-gray-600`
-              } ring ring-gray-300 focus:ring-yellow-500 flex-1 min-w-[60%] ${
-                isEditable.email ? `cursor-pointer` : `cursor-not-allowed`
-              }`}
-              type="text"
-            />
-            {isEditable.email && (
-              <button
-                onClick={() => handelSave("email")}
-                className="bg-yellow-500 py-2 px-10 text-white rounded-xs uppercase text-sm md:text-lg font-semibold cursor-pointer"
-              >
-                Save
-              </button>
-            )}
-          </div>
-          {Errors.email && (
-            <h6 className="text-xs mt-2 text-red-500 font-semibold">
-              {Errors.email}
-            </h6>
+          <input
+            ref={emailRef}
+            defaultValue={loggedInUser?.email || ""}
+            disabled={!isEditable.email}
+            className={`rounded-md outline-none text-sm px-3 py-3.5 ring ring-gray-300 focus:ring-yellow-500 flex-1 min-w-[60%] ${
+              isEditable.email
+                ? "cursor-pointer"
+                : "cursor-not-allowed text-gray-500"
+            }`}
+            type="text"
+          />
+          {isEditable.email && (
+            <button
+              onClick={() => handelSave("email")}
+              className="bg-yellow-500 py-2 px-10 text-white rounded-xs uppercase text-sm md:text-lg font-semibold cursor-pointer"
+            >
+              Save
+            </button>
           )}
         </div>
 
@@ -331,32 +296,33 @@ const Profile = ({ handelLogout }) => {
               {isEditable.phone ? "Cancel" : "Edit"}
             </h6>
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-4">
-            <input
-              ref={mobileRef}
-              defaultValue={loggedInUser?.mobile || "Not available"}
-              disabled={!isEditable.phone}
-              className={`px-3 py-3.5 rounded-md outline-none ${
-                !isEditable.phone && ` text-gray-600`
-              } ring ring-gray-300 focus:ring-yellow-500 flex-1 min-w-[60%] ${
-                isEditable.phone ? `cursor-pointer` : `cursor-not-allowed`
-              }`}
-              type="text"
-            />
-            {isEditable.phone && (
-              <button
-                onClick={() => handelSave("phone")}
-                className="bg-yellow-500 py-2 px-10 text-white rounded-xs uppercase text-sm md:text-lg font-semibold"
-              >
-                Save
-              </button>
-            )}
-          </div>
-          {Errors.phone && (
-            <h6 className="text-xs mt-2 text-red-500 font-semibold">
-              {Errors.phone}
-            </h6>
+          <input
+            ref={mobileRef}
+            defaultValue={loggedInUser?.phone || ""}
+            disabled={!isEditable.phone}
+            className={`px-3 py-3.5 rounded-md outline-none ring ring-gray-300 focus:ring-yellow-500 flex-1 min-w-[60%] ${
+              isEditable.phone
+                ? "cursor-pointer"
+                : "cursor-not-allowed text-gray-500"
+            }`}
+            type="text"
+          />
+          {isEditable.phone && (
+            <button
+              onClick={() => handelSave("phone")}
+              className="bg-yellow-500 py-2 px-10 text-white rounded-xs uppercase text-sm md:text-lg font-semibold"
+            >
+              Save
+            </button>
           )}
+        </div>
+
+        <div className="mt-4">
+          <h1 className="text-lg font-semibold">Address</h1>
+          <p>
+            {loggedInUser.address}, {loggedInUser.city}, {loggedInUser.state} -{" "}
+            {loggedInUser.postCode}
+          </p>
         </div>
       </div>
     </div>

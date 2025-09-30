@@ -1,247 +1,271 @@
 import EmptyCart from "./EmptyCart";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Cart = ({ cartItems, setCartItems }) => {
   const navigate = useNavigate();
-  useEffect(() => {
-    const storedCart = localStorage.getItem("cart");
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart));
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+
+  const fetchCart = async () => {
+    if (!token) return navigate("/signup");
+    setLoading(true);
+    setError("");
+    try {
+      const response = await axios.post(
+        "http://192.168.29.2:7210/api/v1/user/view-cart",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.status) {
+        const products = response.data.data.products.map((item) => {
+          const productDetail = item.productDetail || {};
+          const discountedPrice =
+            productDetail.discountedPrice || productDetail.price;
+          const discountPercent = productDetail.discountPercent || 0;
+          return {
+            _id: item.productId,
+            qty: item.quantity,
+            price: productDetail.price || item.price,
+            discountedPrice,
+            discountPercent,
+            totalPrice: item.quantity * discountedPrice,
+            name: productDetail.name || "",
+            description: productDetail.description || "",
+            images: productDetail.images || [],
+          };
+        });
+        setCartItems(products);
+        updateTotalAmount(products);
+      } else {
+        setError(response.data.message);
+      }
+    } catch (err) {
+      console.error("Cart fetch error:", err);
+      setError("Failed to load cart");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchCart();
   }, []);
 
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      localStorage.setItem("cart", JSON.stringify(cartItems));
-    } else {
-      localStorage.removeItem("cart");
-    }
-  }, [cartItems]);
-
-  const discount = 0;
-  const protectPromiseFees = 0;
-  const totalPrice = cartItems.map((item) => {
-    return item.price * item.qty;
-  });
-  const subTotal = totalPrice.reduce((acc, curr) => {
-    return acc + curr;
-  }, 0);
-  const grandTotal = subTotal - discount - protectPromiseFees;
-  const handelRemove = (id) => {
-    if (window.confirm("Are You Sure")) {
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
-    }
+  const updateTotalAmount = (items) => {
+    const total = items.reduce((acc, i) => acc + i.totalPrice, 0);
+    setTotalAmount(total);
   };
-  const handelQty = (id, type) => {
-    if (type === "inc") {
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, qty: item.qty + 1 } : item
-        )
-      );
-    } else {
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, qty: item.qty > 1 ? item.qty - 1 : item.qty }
-            : item
-        )
-      );
-    }
-  };
-  const handelOrder = () => {
-    toast.success("Order Successfully");
 
-    const getRandomDate = (type) => {
-      const now = new Date();
-      let start, end;
-
-      switch (type) {
-        case "Last 30 Days":
-          start = new Date();
-          start.setDate(now.getDate() - 30);
-          end = now;
-          break;
-        case "2024":
-          start = new Date(2024, 0, 1);
-          end = new Date(2024, 11, 31);
-          break;
-        case "2023":
-          start = new Date(2023, 0, 1);
-          end = new Date(2023, 11, 31);
-          break;
-        case "2022":
-          start = new Date(2022, 0, 1);
-          end = new Date(2022, 11, 31);
-          break;
-        case "2021":
-          start = new Date(2021, 0, 1);
-          end = new Date(2021, 11, 31);
-          break;
-        default:
-          start = new Date(2019, 0, 1);
-          end = new Date(2020, 11, 31);
+  const updateQtyAPI = async (id, qty) => {
+    try {
+      if (qty === 0) {
+        await axios.post(
+          "http://192.168.29.2:7210/api/v1/user/delete-cart-product",
+          { productId: id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        await axios.post(
+          "http://192.168.29.2:7210/api/v1/user/update-cart-product",
+          { productId: id, quantity: qty },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
+    } catch (error) {
+      console.error("Update cart API error:", error);
+      toast.error("Failed to update cart");
+    }
+  };
 
-      const randomTime =
-        start.getTime() + Math.random() * (end.getTime() - start.getTime());
-
-      return new Date(randomTime).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-    };
-
-    const updatedOrders = cartItems.map((item, i) => {
-      const orderTimeOptions = [
-        "Last 30 Days",
-        "2024",
-        "2023",
-        "2022",
-        "2021",
-        "Older",
-      ];
-      const orderTime = orderTimeOptions[i % orderTimeOptions.length];
-
-      return {
-        ...item,
-        orderStatus: ["On the way", "Delivered", "Cancelled", "Returned"][
-          i % 4
-        ],
-        orderTime,
-        orderDate: getRandomDate(orderTime),
-        orderId: Date.now() + "-" + item.id,
-      };
+  const handleQtyChange = async (id, type) => {
+    const updatedCart = cartItems.map((item) => {
+      if (item._id === id) {
+        const newQty =
+          type === "inc" ? item.qty + 1 : Math.max(item.qty - 1, 1);
+        return {
+          ...item,
+          qty: newQty,
+          totalPrice: newQty * item.discountedPrice,
+        };
+      }
+      return item;
     });
 
-    const prevOrders = JSON.parse(localStorage.getItem("orderProducts")) || [];
-    localStorage.setItem(
-      "orderProducts",
-      JSON.stringify([...prevOrders, ...updatedOrders])
-    );
-
-    setCartItems([]);
-    localStorage.removeItem("cart");
+    setCartItems(updatedCart);
+    updateTotalAmount(updatedCart);
+    const updatedQty = updatedCart.find((i) => i._id === id).qty;
+    await updateQtyAPI(id, updatedQty);
   };
 
-  return (
-    <>
-      {cartItems.length > 0 ? (
-        <div className="w-full min-h-screen flex flex-col lg:flex-row justify-between">
-          <div className="w-full lg:w-[60%] h-auto lg:h-screen flex flex-col">
-            <div className="flex-1 overflow-y-scroll px-4 py-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="w-full px-4 py-3 flex flex-col gap-5 mb-2 border border-gray-200 shadow-[0px_0px_6px_0px_rgba(0,_0,_0,_0.1)] rounded-md"
-                >
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
-                    <div className="w-full sm:w-[25%] h-36 sm:h-40 flex-shrink-0">
-                      <img
-                        className="w-full h-full object-contain"
-                        src={item.image}
-                        alt=""
-                      />
-                    </div>
-                    <div className="flex-1 flex flex-col sm:gap-3 gap-2 sm:justify-center md:justify-center lg:justify-end lg:gap-3">
-                      <h1 className="text-base font-semibold">
-                        {item.title.split(" ").slice(0, 6).join(" ")}
-                      </h1>
-                      <h2 className="text-sm text-gray-600">
-                        {item.description.split(" ").slice(0, 15).join(" ") +
-                          "..."}
-                      </h2>
-                      <h6 className="text-lg font-semibold text-orange-600">
-                        ₹{item.price * item.qty}
-                      </h6>
-                    </div>
-                  </div>
+  const handleRemove = async (id) => {
+    const confirmRemove = window.confirm(
+      "Are you sure you want to remove this item from the cart?"
+    );
+    if (!confirmRemove) return;
+    try {
+      await axios.post(
+        "http://192.168.29.2:7210/api/v1/user/delete-cart-product",
+        { productId: id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const updatedCart = cartItems.filter((item) => item._id !== id);
+      setCartItems(updatedCart);
+      updateTotalAmount(updatedCart);
+      toast.success("Removed from cart!");
+    } catch (error) {
+      console.error("Delete cart API error:", error);
+      toast.error("Failed to remove product");
+    }
+  };
 
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex w-[25%] items-center justify-center gap-2">
-                      <button
-                        onClick={() => handelQty(item.id, "dec")}
-                        className="h-8 w-8 border rounded-full font-semibold text-xl flex items-center justify-center cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <div className="h-8 w-10 border flex items-center justify-center text-base font-semibold">
-                        {item.qty}
-                      </div>
-                      <button
-                        onClick={() => handelQty(item.id, "inc")}
-                        className="h-8 w-8 border rounded-full font-semibold text-xl flex items-center justify-center cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => handelRemove(item.id)}
-                      className="px-4 py-2 bg-red-500 text-white font-semibold rounded-md cursor-pointer"
-                    >
-                      Remove
-                    </button>
+  const handleOrder = () => {
+    toast.success("Order placed successfully!");
+    setCartItems([]);
+    setTotalAmount(0);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="loader border-t-yellow-500 border-t-4 border-gray-300 rounded-full w-12 h-12 animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[60vh]">
+        <p className="text-red-500 text-lg font-semibold mb-3">{error}</p>
+        <button
+          onClick={fetchCart}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return cartItems.length > 0 ? (
+    <div className="w-full min-h-screen flex flex-col lg:flex-row justify-between">
+      <div className="w-full lg:w-[60%] h-auto lg:h-screen flex flex-col">
+        <div className="flex-1 overflow-y-scroll px-4 py-4">
+          {cartItems.map((item) => (
+            <div
+              key={item._id}
+              className="w-full px-4 py-3 flex flex-col gap-5 mb-2 border border-gray-200 shadow rounded-md"
+            >
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
+                <div className="w-full sm:w-[25%] h-36 sm:h-40 flex-shrink-0">
+                  <img
+                    className="w-full h-full object-contain"
+                    src={item.images?.[0]}
+                    alt={item.name}
+                  />
+                </div>
+                <div className="flex-1 flex flex-col sm:gap-3 gap-2 sm:justify-center md:justify-center lg:justify-end lg:gap-3">
+                  <h1 className="text-base font-semibold">{item.name}</h1>
+                  <h2 className="text-sm text-gray-600">
+                    {item.description?.slice(0, 100)}...
+                  </h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <h6 className="text-lg font-semibold text-orange-600">
+                      ₹{item.totalPrice}
+                    </h6>
+                    {item.discountPercent > 0 && (
+                      <span className="text-sm text-gray-500 line-through">
+                        ₹{item.price * item.qty}
+                      </span>
+                    )}
+                    {item.discountPercent > 0 && (
+                      <span className="text-sm text-green-600 font-semibold">
+                        ({item.discountPercent}% off)
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="h-16 shadow-inner bg-[#f3f3f3] flex items-center gap-5 sm:justify-between px-4">
-              <button
-                onClick={() => navigate("/")}
-                className="uppercase font-semibold text-white bg-blue-500 w-full sm:w-[30%] h-12 rounded sm:text-lg cursor-pointer hover:bg-blue-600 transition-colors ease-linear"
-              >
-                Add more Items
-              </button>
-              <button
-                onClick={handelOrder}
-                className="uppercase font-semibold text-white bg-orange-500 w-full sm:w-[30%] h-12 rounded sm:text-lg cursor-pointer hover:bg-orange-600 transition-colors ease-linear"
-              >
-                Place Order
-              </button>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex w-[25%] items-center justify-center gap-2">
+                  <button
+                    onClick={() => handleQtyChange(item._id, "dec")}
+                    className="h-8 w-8 border rounded-full font-semibold text-xl flex items-center justify-center cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <div className="h-8 w-10 border flex items-center justify-center text-base font-semibold">
+                    {item.qty}
+                  </div>
+                  <button
+                    onClick={() => handleQtyChange(item._id, "inc")}
+                    className="h-8 w-8 border rounded-full font-semibold text-xl flex items-center justify-center cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={() => handleRemove(item._id)}
+                  className="px-4 py-2 bg-red-500 text-white font-semibold rounded-md cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+
+        <div className="h-16 shadow-inner bg-[#f3f3f3] flex items-center gap-5 sm:justify-between px-4">
+          <button
+            onClick={() => navigate("/")}
+            className="uppercase font-semibold text-white bg-blue-500 w-full sm:w-[30%] h-12 rounded sm:text-lg cursor-pointer hover:bg-blue-600 transition-colors ease-linear"
+          >
+            Add more Items
+          </button>
+          <button
+            onClick={handleOrder}
+            className="uppercase font-semibold text-white bg-orange-500 w-full sm:w-[30%] h-12 rounded sm:text-lg cursor-pointer hover:bg-orange-600 transition-colors ease-linear"
+          >
+            Place Order
+          </button>
+        </div>
+      </div>
+
+      <div className="w-full lg:w-[40%] h-auto px-3 py-3 flex flex-col mt-5 lg:mt-0">
+        <div className="w-full sm:w-[90%] bg-[#fff] shadow rounded">
+          <div className="w-full border-b border-gray-300 px-5 py-1">
+            <h1 className="uppercase font-semibold text-lg text-gray-500">
+              Price Details
+            </h1>
           </div>
 
-          <div className="w-full lg:w-[40%] h-auto px-3 py-3 flex flex-col  mt-5 lg:mt-0">
-            <div className="w-full sm:w-[90%] bg-[#fff] shadow-[0px_0px_6px_0px_rgba(0,_0,_0,_0.1)] rounded">
-              <div className="w-full border-b border-gray-300 px-5 py-1">
-                <h1 className="uppercase font-semibold text-lg text-gray-500">
-                  Price Details
-                </h1>
+          <div className="px-5 py-4 space-y-3">
+            {cartItems.map((item) => (
+              <div key={item._id} className="flex justify-between">
+                <span>
+                  {item.name} x {item.qty}
+                </span>
+                <span>₹{item.totalPrice}</span>
               </div>
-
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-lg">Price</h1>
-                  <h1>{subTotal.toFixed(1)}</h1>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h1 className="text-lg">Discount</h1>
-                  <h1>{discount}</h1>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h1 className="text-lg">Protect Promise fees</h1>
-                  <h1>{protectPromiseFees}</h1>
-                </div>
-              </div>
-
-              <div className="px-5 py-3 border-t border-dashed  border-gray-300 flex items-center justify-between">
-                <h1 className="text-xl font-semibold">Total Amount</h1>
-                <h1 className="text-xl">₹{grandTotal.toFixed(1)}</h1>
-              </div>
+            ))}
+            <div className="flex justify-between border-t pt-2 font-semibold">
+              <span>Total Amount</span>
+              <span>₹{totalAmount}</span>
             </div>
           </div>
         </div>
-      ) : (
-        <EmptyCart
-          title={"Your Cart is Empty!"}
-          subHeading={"Add items to it now."}
-        />
-      )}
-    </>
+      </div>
+    </div>
+  ) : (
+    <EmptyCart
+      title={"Your Cart is Empty!"}
+      subHeading={"Add items to it now."}
+    />
   );
 };
 

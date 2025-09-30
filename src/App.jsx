@@ -14,6 +14,7 @@ import { Toaster } from "react-hot-toast";
 import Profile from "./Components/Profile";
 import toast from "react-hot-toast";
 import Orders from "./Components/orders";
+
 const App = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
@@ -23,33 +24,52 @@ const App = () => {
   const [wishlistData, setwishlistData] = useState(
     () => JSON.parse(localStorage.getItem("wishlist")) || []
   );
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!localStorage.getItem("productData")) {
-      (async () => {
-        try {
-          setError(false);
-          setLoading(true);
-          const response = await axios.get("https://fakestoreapi.com/products");
-          setData(response.data);
-          localStorage.setItem("productData", JSON.stringify(response.data));
-          setLoading(false);
-        } catch (error) {
-          console.log(error);
-          setError(true);
-          setLoading(false);
-        }
-      })();
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(false);
+      try {
+        const response = await axios.post(
+          "http://192.168.29.2:7210/api/v1/product/list-user",
+          { search: "" },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const productList = Array.isArray(response.data.data?.list)
+          ? response.data.data.list
+          : [];
+
+        setData(productList);
+        localStorage.setItem("productData", JSON.stringify(productList));
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const storedData = localStorage.getItem("productData");
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        setData(Array.isArray(parsedData) ? parsedData : []);
+      } catch {
+        setData([]);
+      }
     } else {
-      setData(JSON.parse(localStorage.getItem("productData")));
+      fetchProducts();
     }
-  }, []);
-  const filteredData = data.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
-  );
+  }, [token]);
+
+  const filteredData = Array.isArray(data)
+    ? data.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   const cartCount = cartItems.reduce((acc, item) => acc + (item.qty || 1), 0);
   const wishlistCount = wishlistData.length;
@@ -61,31 +81,23 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
+
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const handelLogout = (func) => {
-    if (typeof func === "function") {
-      func((prev) => !prev);
-    }
+
+  const handelLogout = (toggleFunc) => {
+    if (typeof toggleFunc === "function") toggleFunc((prev) => !prev);
+
     if (user) {
-      localStorage.clear();
+      localStorage.removeItem("token");
+      localStorage.removeItem("loggedInUser");
       setwishlistData([]);
       setCartItems([]);
-      toast("Logout Sucessfully!", {
-        icon: "",
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
+      toast("Logout Successfully!", {
+        style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
     } else {
       toast("Please Login first!", {
-        icon: "",
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
     }
   };
@@ -100,7 +112,6 @@ const App = () => {
           cartCount={cartCount}
           wishlistCount={wishlistCount}
           handelLogout={handelLogout}
-          user={user}
         />
         <Routes>
           <Route
@@ -115,7 +126,6 @@ const App = () => {
                 data={data}
                 error={error}
                 loading={loading}
-                setLoading={setLoading}
                 filteredData={filteredData}
               />
             }

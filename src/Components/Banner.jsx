@@ -27,7 +27,7 @@ const Banner = () => {
                 placeholder="Enter your Email"
                 className="w-[70%] px-2 py-2.5 rounded-md  focus:outline-none text-black text-sm sm:text-base placeholder:font-semibold placeholder:text-black"
               />
-              <button className="bg-yellow-500 cursor-pointer text-white px-4 py-2.5  rounded-sm flex items-center gap-2 text-sm sm:text-base">
+              <button className="bg-yellow-500 cursor-pointer text-white px-4 py-1.5 sm:py-2.5  rounded-sm flex items-center gap-2 text-sm sm:text-base">
                 Subscribe <FaArrowRight className="font-semibold" size={15} />
               </button>
             </div>

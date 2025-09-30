@@ -3,11 +3,16 @@ import { IoSearchSharp } from "react-icons/io5";
 import { FaRegHeart, FaUserCircle, FaAngleDown } from "react-icons/fa";
 import { RiShoppingCart2Line } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RiLoginBoxLine } from "react-icons/ri";
-const Header = ({ search, setSearch, cartCount, wishlistCount, user }) => {
+import Profile from "./Profile";
+const Header = ({ search, setSearch, cartCount, wishlistCount }) => {
+  const [userProfile, setUserProfile] = useState();
   const [isTimOpen, setisTimOpen] = useState(false);
   const navigate = useNavigate();
+  useEffect(() => {
+    setUserProfile(JSON.parse(localStorage.getItem("loggedInUser")));
+  }, []);
 
   return (
     <>
@@ -41,15 +46,20 @@ const Header = ({ search, setSearch, cartCount, wishlistCount, user }) => {
             onClick={() => setisTimOpen((prev) => !prev)}
             className="relative flex items-center gap-2 cursor-pointer"
           >
-            <div className="relative">
-              <FaUserCircle className="text-2xl" />
+            <div className="relative flex items-center justify-center h-10 w-10">
+              {userProfile?.image ? (
+                <img
+                  className="w-full h-full rounded-full"
+                  src={Profile.image}
+                  alt=""
+                />
+              ) : (
+                <FaUserCircle className="text-2xl" />
+              )}
             </div>
             <div className="flex items-center">
               <h4 className="hidden md:block capitalize">
-                {user?.name.split(" ")[0] ||
-                  user?.name ||
-                  user?.firstName ||
-                  "Guest"}
+                {userProfile?.name.split(" ")[0] || "Guest"}
               </h4>
               <FaAngleDown className="md:text-[22px] md:mt-1" />
             </div>
