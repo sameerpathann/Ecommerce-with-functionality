@@ -18,12 +18,8 @@ import Orders from "./Components/orders";
 const App = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [cartItems, setCartItems] = useState(
-    () => JSON.parse(localStorage.getItem("cart")) || []
-  );
-  const [wishlistData, setwishlistData] = useState(
-    () => JSON.parse(localStorage.getItem("wishlist")) || []
-  );
+  const [cartItems, setCartItems] = useState([]);
+  const [wishlistData, setwishlistData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const token = localStorage.getItem("token");
@@ -44,7 +40,6 @@ const App = () => {
           : [];
 
         setData(productList);
-        localStorage.setItem("productData", JSON.stringify(productList));
       } catch (err) {
         setError(true);
       } finally {
@@ -52,17 +47,7 @@ const App = () => {
       }
     };
 
-    const storedData = localStorage.getItem("productData");
-    if (storedData) {
-      try {
-        const parsedData = JSON.parse(storedData);
-        setData(Array.isArray(parsedData) ? parsedData : []);
-      } catch {
-        setData([]);
-      }
-    } else {
-      fetchProducts();
-    }
+    fetchProducts();
   }, [token]);
 
   const filteredData = Array.isArray(data)
@@ -73,14 +58,6 @@ const App = () => {
 
   const cartCount = cartItems.reduce((acc, item) => acc + (item.qty || 1), 0);
   const wishlistCount = wishlistData.length;
-
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlistData));
-  }, [wishlistData]);
-
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
 
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
 
